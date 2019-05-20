@@ -9,30 +9,35 @@ const PORT = process.env.PORT || 8000; //This line is critical, must have proces
 server.use(express.json());
 server.use(cors());
 
-let token = jwt.sign({
-  something: 'anything'
-}, 'You have to know the password');
+let token = jwt.sign(
+  {
+    something: 'anything',
+  },
+  'You have to know the password',
+);
 
 server.get('/', (req, res) => {
   res.status(200).send('App is running');
-})
+});
 
 server.get('/notes/:id', async (req, res) => {
   if (req.params.id === 'all') {
     try {
       const notes = await db('notes');
       res.status(200).json(notes);
-    } catch(err) {
+    } catch (err) {
       return res.status(500).send(`Ya done goofed with error: ${err}`);
     }
   } else {
     try {
-      const note = await db('notes').where('id', req.params.id).first();
+      const note = await db('notes')
+        .where('id', req.params.id)
+        .first();
       const tags = await db('tags').where('note_id', req.params.id);
       note.tags = tags;
       res.status(200).json(note);
     } catch (err) {
-      return res.status(500).send(`Ya done goofed with error: ${err}`)
+      return res.status(500).send(`Ya done goofed with error: ${err}`);
     }
   }
 });
@@ -41,19 +46,23 @@ server.get('/tags', async (req, res) => {
   try {
     const tags = await db('tags');
     res.status(200).json(tags);
-  } catch(err) {
-    return res.status(500).send(`Error${err}...no tags for you`)
+  } catch (err) {
+    return res.status(500).send(`Error${err}...no tags for you`);
   }
-})
+});
 
-server.post('/notes', async(req, res) => {
+server.post('/notes', async (req, res) => {
   const {title, textBody, user_id} = req.body;
 
   try {
     const ids = await db.insert({title, textBody, user_id}).into('notes');
     const id = ids[0];
 
-    res.status(201).json(await db('notes').where('id', id).first());
+    res.status(201).json(
+      await db('notes')
+        .where('id', id)
+        .first(),
+    );
   } catch (err) {
     res.status(404).send(`${err}...notes could not be created`);
   }
@@ -67,47 +76,58 @@ server.post('/create-tag', async (req, res) => {
     const id = ids[0];
 
     res.status(201).json(await db('tags').where('note_id', note_id));
-  } catch(err) {
-    res.status(500).send(`${err}...tag could not be created`)
+  } catch (err) {
+    res.status(500).send(`${err}...tag could not be created`);
   }
 });
 
 server.delete('/delete-tag/:id', async (req, res) => {
   try {
-    const result = await db('tags').where('id', req.params.id).del();
+    const result = await db('tags')
+      .where('id', req.params.id)
+      .del();
     if (result > 0) {
-      return res.status(200).json({status:'DELETED :)'});
+      return res.status(200).json({status: 'DELETED :)'});
     }
-  } catch(err) {
-    return res.status(500).send(`Server error... ->${err}`)
-  }
-})
-
-server.put('/notes/:id', async(req, res) => {
-  const {title, textBody} = req.body;
-  try {
-    const result = await db('notes').where('id', req.params.id).first().update({
-      title,
-      textBody
-    });
-
-    if(result > 0) {
-      return res.status(200).json(await db('notes').where('id', req.params.id).first());
-    };
-  } catch(err) {
-    res.status(500).send(`${err}...did not put`)
+  } catch (err) {
+    return res.status(500).send(`Server error... ->${err}`);
   }
 });
 
-server.delete('/notes/:id', async(req, res) => {
+server.put('/notes/:id', async (req, res) => {
+  const {title, textBody} = req.body;
   try {
-    const result = await db('notes').where('id', req.params.id).del();
+    const result = await db('notes')
+      .where('id', req.params.id)
+      .first()
+      .update({
+        title,
+        textBody,
+      });
 
-    if(result > 0) {
-      return res.status(200).json({result: "DELETED"})
+    if (result > 0) {
+      return res.status(200).json(
+        await db('notes')
+          .where('id', req.params.id)
+          .first(),
+      );
     }
   } catch (err) {
-    res.status(500).send(`Server error...${err}`)
+    res.status(500).send(`${err}...did not put`);
+  }
+});
+
+server.delete('/notes/:id', async (req, res) => {
+  try {
+    const result = await db('notes')
+      .where('id', req.params.id)
+      .del();
+
+    if (result > 0) {
+      return res.status(200).json({result: 'DELETED'});
+    }
+  } catch (err) {
+    res.status(500).send(`Server error...${err}`);
   }
 });
 
@@ -119,12 +139,14 @@ server.post('/register', async (req, res) => {
   try {
     if (user.username && user.password) {
       const ids = await db.insert(user).into('users');
-      const createdUser = await db('users').where('id', ids[0]).first();
+      const createdUser = await db('users')
+        .where('id', ids[0])
+        .first();
       createdUser.token = token;
       res.status(200).json(createdUser);
     }
   } catch (err) {
-    res.status(500).send(`Server error...${err}`)
+    res.status(500).send(`Server error...${err}`);
   }
 });
 
@@ -132,19 +154,19 @@ server.get('/users', async (req, res) => {
   try {
     res.status(200).json(await db('users'));
   } catch (err) {
-    res.status(500).send(`${err}`)
+    res.status(500).send(`${err}`);
   }
-})
+});
 
 server.get('/users/:id', async (req, res) => {
   if (req.params.id) {
     try {
       res.status(200).json(await db('users').where('id', req.params.id));
     } catch (err) {
-      res.status(404).send(`${err} user not found`)
+      res.status(404).send(`${err} user not found`);
     }
   }
-})
+});
 
 server.get('/users/:id/notes', async (req, res) => {
   try {
@@ -152,28 +174,38 @@ server.get('/users/:id/notes', async (req, res) => {
   } catch (err) {
     res.status(500).send(`${err} Server error`);
   }
-})
+});
 
 server.post('/login', async (req, res) => {
   try {
     const credentials = req.body;
-    const foundUser = await db('users').where('username', credentials.username).first();
+    const foundUser = await db('users')
+      .where('username', credentials.username)
+      .first();
 
     if (foundUser) {
       const userHash = foundUser.password;
       let isValid = bcrypt.compareSync(credentials.password, userHash);
       if (isValid) {
-        return res.status(200).json({message: "Logged In", user: credentials.username, token:token, id:foundUser.id})
+        return res
+          .status(200)
+          .json({
+            message: 'Logged In',
+            user: credentials.username,
+            token: token,
+            id: foundUser.id,
+          });
       } else {
-        return res.status(401).send('Incorrect password')
+        return res.status(401).send('Incorrect password');
       }
     } else {
-      return res.status(404).send('Error, no user exists with that name')
+      return res.status(404).send('Error, no user exists with that name');
     }
-
   } catch (err) {
     return res.status(401).json({message: `Server Error ${err}`});
   }
-})
+});
 
- server.listen(PORT, () => console.log(`App is listening with Heroku :)...on port ${PORT}`)); 
+server.listen(PORT, () =>
+  console.log(`App is listening with Heroku :)...on port ${PORT}`),
+);

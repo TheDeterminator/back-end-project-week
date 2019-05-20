@@ -15,8 +15,6 @@ exports.up = function(knex, Promise) {
     tbl.string('title').notNullable();
     tbl.text('textBody');
     tbl.boolean('completed').defaultTo(false);
-
-
   });
 };
 
